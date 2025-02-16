@@ -6,6 +6,11 @@ We introduce a novel deep-learning architecture for simultaneous seizure detecti
 ## Poster
 [poster link](https://drive.google.com/drive/folders/17pKhwFc4x1_2zwXTndKawoNKlaXIW-VE?usp=sharing)
 
-## Instruction
+## Docker Image
+```bash
+docker pull yujjio/seizure_transformer
+```
+
+## Implementation Instruction
 1. Download the model's weight from [here](https://drive.google.com/drive/folders/17pKhwFc4x1_2zwXTndKawoNKlaXIW-VE?usp=sharing)
 2. Put the weight file in **wu_2025/src/wu_2025**
