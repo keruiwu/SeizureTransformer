@@ -1,0 +1,31 @@
+[project]
+name = "wu-2025"
+version = "0.1.0"
+description = "SeizureTransformer"
+authors = [
+    { name = "Kerui Wu", email = "wuk9@rpi.edu" },
+    { name = "Ziyue Zhao", email = "zhaoz10@rpi.edu" },
+    { name = "Bulent Yener", email = "yener@cs.rpi.edu" }
+]
+dependencies = [
+    "numpy>=1.25",
+    "scipy>=1.14.1",
+    "torch>=2.0.1",
+    "epilepsy2bids>=0.0.6",
+]
+readme = "README.md"
+requires-python = ">= 3.10"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/wu_2025"]
