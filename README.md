@@ -16,13 +16,10 @@ docker pull yujjio/seizure_transformer
 ## Reference
 If you find our model useful, please cite our paper:
 ```
-@misc{wu2025seizuretransformerscalingunettransformer,
-      title={SeizureTransformer: Scaling U-Net with Transformer for Simultaneous Time-Step Level Seizure Detection from Long EEG Recordings}, 
-      author={Kerui Wu and Ziyue Zhao and Bülent Yener},
-      year={2025},
-      eprint={2504.00336},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2504.00336}, 
+@article{wu2025seizuretransformer,
+  title={SeizureTransformer: Scaling U-Net with Transformer for Simultaneous Time-Step Level Seizure Detection from Long EEG Recordings},
+  author={Wu, Kerui and Zhao, Ziyue and Yener, B{\"u}lent},
+  journal={arXiv preprint arXiv:2504.00336},
+  year={2025}
 }
 ```
