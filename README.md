@@ -1,5 +1,5 @@
 # Large EEG-U-Transformer for Time-Step Level Detection Without Pre-Training
-This repository is the official implementation of "Large EEG-U-Transformer for Time-Step Level Detection Without Pre-Training" and the model that won **1st place** in the 2025 "seizure detection challenge" organized in the International Conference on Artificial Intelligence in Epilepsy and Other Neurological Disorders.
+This repository is the official implementation of "Large EEG-U-Transformer for Time-Step Level Detection Without Pre-Training" and the model that won **1st place** in the [2025 seizure detection challenge](https://epilepsybenchmarks.com/challenge/) organized in the International Conference on Artificial Intelligence in Epilepsy and Other Neurological Disorders.
 
 ![image](figures/SeizureTransformer.png)
 
