@@ -1,0 +1,19 @@
+python3 st_train.py \
+        --output_dir ./checkpoints/finetune_tuab_eegpt/ \
+        --log_dir ./log/finetune_tuab_eegpt \
+        --model EEGPT \
+        --finetune ../checkpoint/eegpt_mcae_58chs_4s_large4E.ckpt \
+        --weight_decay 0.05 \
+        --batch_size 512\
+        --lr 5e-4 \
+        --update_freq 1 \
+        --warmup_epochs 5 \
+        --epochs 50 \
+        --layer_decay 0.65 \
+        --dist_eval \
+        --save_ckpt_freq 5 \
+        --disable_rel_pos_bias \
+        --abs_pos_emb \
+        --dataset TUAB \
+        --disable_qkv_bias \
+        --seed 0

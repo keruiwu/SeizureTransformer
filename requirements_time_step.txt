@@ -1,0 +1,65 @@
+blessed==1.20.0
+Bottleneck==1.4.2
+Brotli @ file:///croot/brotli-split_1736182456865/work
+certifi @ file:///croot/certifi_1738623731865/work/certifi
+charset-normalizer @ file:///croot/charset-normalizer_1721748349566/work
+contourpy==1.3.1
+cycler==0.12.1
+decorator==5.2.1
+# Editable install with no version control (epilepsy2bids==0.0.7)
+-e /home/wuk9/Seizure/epilepsy2bids-main
+filelock @ file:///croot/filelock_1700591183607/work
+fonttools==4.56.0
+gmpy2 @ file:///croot/gmpy2_1738085463648/work
+gpustat==1.1.1
+greenlet==3.2.1
+h5py==3.13.0
+idna @ file:///croot/idna_1714398848350/work
+Jinja2 @ file:///croot/jinja2_1737760107953/work
+joblib==1.4.2
+kiwisolver==1.4.8
+llvmlite==0.44.0
+lxml==5.4.0
+MarkupSafe @ file:///croot/markupsafe_1738584038848/work
+matplotlib==3.10.0
+mkl-service==2.4.0
+mkl_fft @ file:///io/mkl313/mkl_fft_1730824109137/work
+mkl_random @ file:///io/mkl313/mkl_random_1730823916628/work
+mpmath @ file:///croot/mpmath_1690848262763/work
+nest-asyncio==1.6.0
+networkx @ file:///croot/networkx_1737039604450/work
+numba==0.61.0
+numpy==1.26.4
+nvidia-ml-py==12.570.86
+obspy==1.4.2
+packaging==24.2
+pandas==2.2.3
+pillow @ file:///croot/pillow_1738010226202/work
+psutil==7.0.0
+pyarrow==19.0.0
+pyEDFlib==0.1.39
+pyparsing==3.2.1
+PySocks @ file:///home/builder/ci_310/pysocks_1640793678128/work
+python-dateutil==2.9.0.post0
+pytz==2025.1
+requests @ file:///croot/requests_1730999120400/work
+resampy==0.4.3
+scikit-learn==1.6.1
+scipy==1.15.1
+seisbench==0.8.2
+six==1.17.0
+SQLAlchemy==1.4.54
+sympy @ file:///croot/sympy_1738108488918/work
+termcolor==2.5.0
+threadpoolctl==3.6.0
+# Editable install with no version control (timescoring==0.0.6)
+-e /home/wuk9/Seizure/timescoring-main
+torch==2.0.1
+torchaudio==2.0.2
+torchvision==0.15.2
+tqdm==4.67.1
+triton==2.0.0
+typing_extensions @ file:///croot/typing_extensions_1734714854207/work
+tzdata==2025.1
+urllib3 @ file:///croot/urllib3_1737133630106/work
+wcwidth==0.2.13

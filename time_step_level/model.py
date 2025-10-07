@@ -14,6 +14,9 @@ class SeizureTransformer(nn.Module):
         self,
         in_channels=19,
         in_samples=15360,
+        dim_feedforward=2048,
+        num_layers=8,
+        num_heads=4,
         drop_rate=0.1,
     ):
         super().__init__()
@@ -52,12 +55,12 @@ class SeizureTransformer(nn.Module):
         self.position_encoding = PositionalEncoding(d_model=512)
         self.transformer_encoder_layer = nn.TransformerEncoderLayer(
             d_model=512,
-            nhead=4,
-            dim_feedforward=2048
+            nhead=num_heads,
+            dim_feedforward=dim_feedforward,
         )
         self.transformer_encoder = nn.TransformerEncoder(
             self.transformer_encoder_layer,
-            num_layers=8
+            num_layers=num_layers,
         )
 
         # Detection decoder and final Conv
@@ -88,6 +91,96 @@ class SeizureTransformer(nn.Module):
         detection = torch.sigmoid(self.conv_d(detection))
         detection = torch.squeeze(detection, dim=1)  # Remove channel dimension
 
+        return detection
+
+
+class EventTransformer(nn.Module):
+
+    def __init__(
+        self,
+        in_channels=23,
+        in_samples=6000,
+        dim_feedforward=2048,
+        num_layers=8,
+        num_heads=4,
+        drop_rate=0.1,
+        num_classes=6,
+    ):
+        super().__init__()
+
+        self.in_channels = in_channels
+        self.in_samples = in_samples
+        self.drop_rate = drop_rate
+        self.num_classes = num_classes
+
+        # Parameters from EQTransformer repository
+        self.filters = [
+            32,
+            64,
+            128,
+            256,
+        ]  # Number of filters for the convolutions
+        self.kernel_sizes = [11, 9, 7, 7, 5, 5, 3]  # Kernel sizes for the convolutions
+        self.res_cnn_kernels = [3, 3, 3, 3, 2, 3, 2]
+
+
+        # Encoder stack
+        self.encoder = Encoder(
+            input_channels=self.in_channels,
+            filters=self.filters,
+            kernel_sizes=self.kernel_sizes,
+            in_samples=self.in_samples,
+        )
+
+        # Res CNN Stack
+        self.res_cnn_stack = ResCNNStack(
+            kernel_sizes=self.res_cnn_kernels,
+            filters=self.filters[-1],
+            drop_rate=self.drop_rate,
+        )
+
+        self.position_encoding = PositionalEncoding(d_model=256)
+        self.transformer_encoder_layer = nn.TransformerEncoderLayer(
+            d_model=256,
+            nhead=num_heads,
+            dim_feedforward=dim_feedforward,
+        )
+        self.transformer_encoder = nn.TransformerEncoder(
+            self.transformer_encoder_layer,
+            num_layers=num_layers,
+        )
+
+        # Detection decoder and final Conv
+        self.decoder_d = Decoder(
+            input_channels=256,
+            filters=self.filters[::-1],
+            kernel_sizes=self.kernel_sizes[::-1],
+            out_samples=in_samples,
+            original_compatible=False,
+        )
+        self.conv_d = nn.Conv1d(
+            in_channels=self.filters[0], out_channels=num_classes, kernel_size=11, padding=5
+        )
+        self.softmax = nn.Softmax(dim=2)
+    def forward(self, x, logits=True):
+        assert x.ndim == 3
+        assert x.shape[1:] == (self.in_channels, self.in_samples)
+
+        # print('x', x.shape)
+        x, skips = self.encoder(x)
+        res_x = self.res_cnn_stack(x)
+
+        x = res_x.permute(2, 0, 1)
+        x = self.position_encoding(x)
+        x = self.transformer_encoder(x)
+        x = x.permute(1, 2, 0)
+        x = x + res_x
+
+        detection = self.decoder_d(x, skips)
+        detection = self.conv_d(detection)
+        # print('detection', detection.shape)
+        detection = detection.permute(0, 2, 1)
+        detection = self.softmax(detection)
         return detection
 
 
@@ -275,3 +368,127 @@ class SpatialDropout1d(nn.Module):
         x = self.dropout(x)
         x = x.squeeze(dim=-1)  # Remove fake dimension
         return x
+
+
+
+
+
+
+
+
+
+"""
+Back Up
+"""
+class SeizureTransformer_window(nn.Module):
+
+    def __init__(
+        self,
+        in_channels=19,
+        in_samples=15360,
+        num_classes=1,
+        dim_feedforward=2048,
+        num_layers=8,
+        num_heads=4,
+        drop_rate=0.1,
+    ):
+        super().__init__()
+
+        self.in_channels = in_channels
+        self.in_samples = in_samples
+        self.num_classes = num_classes
+        self.drop_rate = drop_rate
+
+        # Parameters from EQTransformer repository
+        self.filters = [
+            32,
+            64,
+            128,
+            256,
+            512
+        ]  # Number of filters for the convolutions
+        self.kernel_sizes = [11, 9, 7, 7, 5, 5, 3]  # Kernel sizes for the convolutions
+        self.res_cnn_kernels = [3, 3, 3, 3, 2, 3, 2]
+
+
+        # Encoder stack
+        self.encoder = Encoder(
+            input_channels=self.in_channels,
+            filters=self.filters,
+            kernel_sizes=self.kernel_sizes,
+            in_samples=self.in_samples,
+        )
+
+        # Res CNN Stack
+        self.res_cnn_stack = ResCNNStack(
+            kernel_sizes=self.res_cnn_kernels,
+            filters=self.filters[-1],
+            drop_rate=self.drop_rate,
+        )
+
+        self.position_encoding = PositionalEncoding(d_model=256)
+        self.transformer_encoder_layer = nn.TransformerEncoderLayer(
+            d_model=256,
+            nhead=num_heads,
+            dim_feedforward=dim_feedforward,
+        )
+        self.transformer_encoder = nn.TransformerEncoder(
+            self.transformer_encoder_layer,
+            num_layers=num_layers,
+        )
+
+        # Detection decoder and final Conv
+        self.decoder_d = Decoder(
+            input_channels=256,
+            filters=self.filters[::-1],
+            kernel_sizes=self.kernel_sizes[::-1],
+            out_samples=in_samples,
+            original_compatible=False,
+        )
+
+        self.pooling = AttentionPooling(hidden_dim=32)
+        self.classifier = nn.Linear(32, num_classes)
+        if num_classes == 1:
+            self.softmax = nn.Sigmoid()
+        else:
+            self.softmax = nn.Softmax(dim=1)
+
+    def forward(self, x, logits=True):
+        print('x', x.shape)
+        assert x.ndim == 3
+        assert x.shape[1:] == (self.in_channels, self.in_samples)
+
+        x, skips = self.encoder(x)
+        res_x = self.res_cnn_stack(x)
+
+        x = res_x.permute(2, 0, 1)
+        x = self.position_encoding(x)
+        x = self.transformer_encoder(x)
+        x = x.permute(1, 2, 0)
+        x = x + res_x
+
+        detection = self.decoder_d(x, skips)
+        # print('deteciton', detection.shape)
+        
+        detection = self.pooling(detection)
+        detection = self.classifier(detection)
+
+        detection = self.softmax(detection)
+        if self.num_classes == 1:
+            return detection.squeeze(dim=-1)
+        else:
+            return detection
+
+
+class AttentionPooling(nn.Module):
+    def __init__(self, hidden_dim):
+        super(AttentionPooling, self).__init__()
+        self.attn = nn.Linear(hidden_dim, 1)  # Learn score for each time step
+
+    def forward(self, x):
+        # x: (B, H, T)
+        x_perm = x.permute(0, 2, 1)               # (B, T, H)
+        score = self.attn(x_perm).squeeze(-1)     # (B, T)
+        weights = torch.softmax(score, dim=1)     # (B, T)
+        pooled = torch.bmm(x, weights.unsqueeze(-1)).squeeze(-1)  # (B, H)
+        return pooled
