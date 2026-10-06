@@ -132,3 +132,13 @@ def test_resampling(tmp_path):
     assert rec.n_samples_at(256.0) == 2560
     assert store.load_signal(rec).shape == (18, 2560)
     assert rec.intervals(256.0).tolist() == [[512, 1024, 1]]
+
+
+def test_event_error_names_file_once(synthetic_root, tmp_path):
+    root = _copy(synthetic_root, tmp_path / "d")
+    ann = root / "chb03" / "chb03_annotations.txt"
+    ann.write_text(ann.read_text() + "chb03_01.h5\t90\t80\n")
+    cfg = load_config(None, [f"data.root={root}"])
+    with pytest.raises(DataValidationError) as info:
+        H5Store(cfg).scan(["chb03"])
+    assert str(info.value).count("chb03/chb03_01.h5") == 1

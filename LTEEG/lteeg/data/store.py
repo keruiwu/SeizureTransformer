@@ -217,7 +217,8 @@ class H5Store:
             try:
                 rec, verified = self._inspect_file(patient, f, events_by_file.get(f.name, []), report.warnings)
             except (OSError, KeyError, AnnotationError, DataValidationError) as e:
-                errors.append(f"{patient}/{f.name}: {e}")
+                msg, prefix = str(e), f"{patient}/{f.name}"
+                errors.append(msg if msg.startswith(prefix) else f"{prefix}: {msg}")  # event errors already name the file
                 continue
             report.channel_names_verified += int(verified)
             report.recordings.append(rec)
