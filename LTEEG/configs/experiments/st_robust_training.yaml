@@ -1,0 +1,32 @@
+# SeizureTransformer with commonly used stabilizers switched on. A suggested
+# starting point for ablations against the faithful baseline, NOT a validated
+# recipe: compare it with `python -m lteeg compare` before adopting any of it.
+_base_: ../chbmit.yaml
+
+experiment:
+  name: st_robust_training
+
+sampling:
+  redraw_every_epoch: true    # cover far more of the background over training
+
+optimizer:
+  name: adamw
+  lr: 1.0e-4
+  weight_decay: 1.0e-2
+  exclude_norm_bias_from_decay: true
+
+scheduler:
+  name: cosine
+  warmup_epochs: 2.0
+  min_lr_ratio: 0.01
+
+train:
+  amp: bf16                   # needs an Ampere+ GPU; use fp16 on older cards
+  grad_clip: 1.0
+  ema_decay: 0.999
+  augment:
+    - {name: amplitude_scale, low: 0.8, high: 1.25}
+    - {name: hemisphere_swap, p: 0.5}
+
+inference:
+  amp: bf16

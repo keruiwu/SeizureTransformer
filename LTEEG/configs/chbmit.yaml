@@ -1,0 +1,160 @@
+# LTEEG default configuration: SeizureTransformer baseline on CHB-MIT.
+#
+# Every key here equals the dataclass default in lteeg/config.py (tests/test_config.py
+# enforces it). Experiment configs may list only what differs; command-line
+# overrides use dotted keys:  python -m lteeg train --set train.lr=3e-4 model.name=tcn
+# Relative paths: data.split_file is relative to THIS file; data.root, data.cache_dir
+# and experiment.output_dir are relative to the working directory.
+# Windows paths: use forward slashes ("F:/EEG/CHB-MIT") or single quotes ('F:\EEG\CHB-MIT').
+
+experiment:
+  name: seizure_transformer
+  output_dir: runs/chbmit
+  seed: 0
+  deterministic: false        # true: deterministic cuDNN/algorithms (slower)
+  timestamp: true             # run dir = <output_dir>/<name>_<YYYYmmdd-HHMMSS>
+  device: auto                # auto | cpu | cuda | cuda:1
+
+data:
+  root: F:/EEG/CHB-MIT        # <root>/<patient>/<record>.h5 + <patient>_annotations.txt
+  split_file: chbmit_split.json
+  fold: null                  # index into "folds" when the split file defines cross-validation folds
+  file_pattern: "*.h5"
+  signal_key: signals         # HDF5 dataset, shape (channels, samples)
+  fs_attr: fs                 # HDF5 attribute holding the sampling rate
+  channel_attr: null          # attribute with channel names; null = auto-detect common names, else count-only check
+  require_channel_names: false
+  channels: [FP1-F7, F7-T7, T7-P7, P7-O1, FP1-F3, F3-C3, C3-P3, P3-O1,
+             FP2-F4, F4-C4, C4-P4, P4-O2, FP2-F8, F8-T8, T8-P8, P8-O2, FZ-CZ, CZ-PZ]
+  fs: 256.0                   # every file must have exactly this rate unless resample_to is set
+  resample_to: null
+  annotation_file: "{patient}_annotations.txt"
+  annotation_section: seizures
+  annotation_match: exact     # exact: annotated name == h5 file name; stem: compare without extension
+  label_column: null          # column index holding an event class name (multi-class); null = all events -> default_label
+  label_map: {}               # class name -> class index (>= 1) when label_column is set
+  default_label: 1
+  end_tolerance_sec: 1.0      # events may end at most this far past the recording end (then clipped)
+  overlapping_events: error   # error | merge
+  exclude_records: []         # e.g. ["chb12/chb12_27"]; excluded files are logged
+  cache_dir: cache/chbmit     # preprocessed memmap cache (~4 bytes x 18 ch x 256 Hz per second of EEG)
+  cache_dtype: float32        # float16 halves disk/IO with negligible precision loss after z-scoring
+  symmetric_pairs:            # left/right homologous derivations (hemisphere_swap augmentation)
+    - [FP1-F7, FP2-F8]
+    - [F7-T7, F8-T8]
+    - [T7-P7, T8-P8]
+    - [P7-O1, P8-O2]
+    - [FP1-F3, FP2-F4]
+    - [F3-C3, F4-C4]
+    - [C3-P3, C4-P4]
+    - [P3-O1, P4-O2]
+
+task:
+  mode: binary                # binary (1 logit/sample, sigmoid) | multiclass (K logits/sample, softmax)
+  class_names: [background, seizure]
+  ignore_boundary_sec: 0.0    # >0: samples this close to an onset/offset are excluded from the loss
+
+preprocess:
+  recording:                  # applied once per recording, cached; same ops/order as the original code
+    - {op: zscore}
+    - {op: bandpass, low: 0.5, high: 120.0, order: 3}
+    - {op: notch, freq: 1.0, q: 30.0}
+    - {op: notch, freq: 60.0, q: 30.0}
+  window: []                  # applied to every window in training AND inference
+
+windows:
+  length_sec: 60.0
+  train_stride_sec: 15.0
+  include_tail: false         # add one training window aligned to each recording's end
+
+sampling:
+  name: balanced              # balanced | all
+  boundary_ratio: 1.0         # fraction of boundary (partially ictal) windows kept
+  full_ratio: 0.7             # full (entirely ictal) windows = 0.7 x #boundary (capped by availability)
+  background_ratio: 3.0       # background windows = 3 x #boundary (capped by availability)
+  seed: null                  # null -> experiment.seed
+  redraw_every_epoch: false   # true: new full/background subset each epoch
+  group_by: none              # none | patient (apply the ratios within each patient)
+  jitter_sec: 0.0             # random shift of selected windows
+
+model:
+  name: seizure_transformer   # registered name or "package.module:Class"
+  params:
+    dim_feedforward: 2048
+    num_layers: 8
+    num_heads: 4
+    drop_rate: 0.1
+  init_checkpoint: null       # LTEEG checkpoint or original SeizureTransformer state dict
+
+loss:
+  terms:
+    - {name: bce, weight: 1.0}
+
+optimizer:
+  name: radam                 # adam | adamw | radam | sgd
+  lr: 1.0e-4
+  weight_decay: 2.0e-5
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+  momentum: 0.9               # sgd only
+  decoupled_weight_decay: false   # radam: false = L2 penalty as in the original code
+  exclude_norm_bias_from_decay: false
+
+scheduler:
+  name: none                  # none | cosine | step   (stepped per optimizer step)
+  warmup_epochs: 0.0
+  min_lr_ratio: 0.0
+  step_epochs: 10
+  gamma: 0.5
+
+train:
+  epochs: 100
+  batch_size: 86
+  num_workers: 0              # 0 is safest on Windows; a background thread still prefetches
+  pin_memory: true
+  prefetch_batches: 2
+  accum_steps: 1
+  grad_clip: null             # e.g. 1.0
+  amp: none                   # none | bf16 | fp16
+  ema_decay: null             # e.g. 0.999; validation/evaluation then use EMA weights
+  compile: false
+  early_stopping: false
+  patience: 12                # in validations
+  min_delta: 0.0
+  val_every: 1
+  selection_metric: event_f1_pooled
+  selection_mode: max
+  log_every: 20
+  max_nonfinite_steps: 20
+  augment: []                 # e.g. [{name: amplitude_scale}, {name: hemisphere_swap, p: 0.5}]
+
+inference:
+  batch_size: 8
+  hop_sec: null               # null = window length (non-overlapping, as the original); e.g. 30 for 50% overlap
+  combine: mean               # mean | hann (overlap weighting)
+  tail: align                 # align: last window ends at the recording end | pad: zero-pad (original)
+  amp: none
+
+postprocess:
+  threshold: 0.8
+  morph_ops: [opening, closing]
+  morph_kernel: 5             # samples
+  min_duration_sec: 2.0
+  merge_gap_sec: 0.0
+
+scoring:                      # SzCORE defaults
+  sample_fs: 1.0
+  event_fs: 10.0
+  tolerance_start: 30.0
+  tolerance_end: 60.0
+  min_overlap: 0.0
+  max_event_duration: 300.0
+  min_duration_between_events: 90.0
+
+evaluation:
+  splits: [dev]               # evaluated with the best checkpoint after training
+  save_probs: true
+  probs_dtype: float16
+  auc_fs: 1.0
+  sweep_thresholds: [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,
+                     0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]

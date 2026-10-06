@@ -1,0 +1,13 @@
+# Small, fast model to debug the pipeline on real data before long runs.
+_base_: ../chbmit.yaml
+
+experiment:
+  name: tcn_debug
+
+model:
+  name: tcn
+  params: {hidden: 64, levels: 8, stem_stride: 8}
+
+train:
+  epochs: 5
+  batch_size: 32

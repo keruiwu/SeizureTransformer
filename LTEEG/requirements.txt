@@ -1,0 +1,10 @@
+# Core (install torch first from https://pytorch.org for your CUDA version)
+numpy>=1.22
+scipy>=1.8
+h5py>=3.6
+pyyaml>=6.0
+torch>=2.0
+# Optional, for the test suite and cross-checking the SzCORE implementation
+pytest>=7
+timescoring>=0.0.6
+scikit-learn>=1.0

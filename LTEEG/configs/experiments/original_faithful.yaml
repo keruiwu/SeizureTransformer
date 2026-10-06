@@ -1,0 +1,19 @@
+# Exact replication of the original SeizureTransformer pipeline:
+# per-recording z-score, but band-pass/notch filtering applied to every window
+# independently (with its start-up transient), and zero-padding of the last
+# inference window. Use it to quantify what the framework defaults change.
+_base_: ../chbmit.yaml
+
+experiment:
+  name: st_original_faithful
+
+preprocess:
+  recording:
+    - {op: zscore}
+  window:
+    - {op: bandpass, low: 0.5, high: 120.0, order: 3}
+    - {op: notch, freq: 1.0, q: 30.0}
+    - {op: notch, freq: 60.0, q: 30.0}
+
+inference:
+  tail: pad

@@ -1,0 +1,9 @@
+{
+  "description": "CHB-MIT patient-level split. chb01 and chb21 are recordings of the same subject (1.5 years apart) and must stay in the same split. Seizure counts: train 159, dev 39 (about 8:2).",
+  "train": ["chb01", "chb02", "chb03", "chb04", "chb06", "chb07", "chb08", "chb10", "chb12",
+            "chb13", "chb15", "chb16", "chb17", "chb18", "chb19", "chb20", "chb21", "chb23"],
+  "dev": ["chb05", "chb09", "chb11", "chb14", "chb22", "chb24"],
+  "test": [],
+  "groups": [["chb01", "chb21"]],
+  "expected_seizures": {"train": 159, "dev": 39}
+}
